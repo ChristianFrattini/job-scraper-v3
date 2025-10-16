@@ -1,0 +1,37 @@
+name: Daily Apple Jobs Scraper
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # Runs every day at 02:00 UTC 1AM UK time
+  workflow_dispatch: # Allow manual trigger from GitHub Actions tab
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install crawl4ai python-dotenv
+
+      - name: Run scraper
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python main.py
+
+      - name: Commit and push updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add apple_jobs.json apple_jobs.csv || true
+          git commit -m "🤖 Update job data [skip ci]" || echo "No changes to commit"
+          git push
